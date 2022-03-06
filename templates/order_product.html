@@ -29,7 +29,7 @@
                         </div>
                         <div class="card-body">
                             {% from "includes/_formhelpers.html" import render_field %}
-                            <form method="POST" action="/{{product.category}}?order={{product.id}}">
+                            <form method="POST" action="/{{product.category}}?order={{product.id}}" >
                                 <div class="form-group">
                                     {{render_field(form.name, class_="form-control")}}
                                 </div>
@@ -44,7 +44,7 @@
                                 <div class="form-group">
                                     {{render_field(form.order_place, class_="form-control")}}
                                 </div>
-                                <button type="submit" class="btn btn-primary">Confirm Order</button>
+                                <button type="submit" id="clbut" class="btn btn-primary">Confirm Order</button>
                             </form>
                         </div>
                     </div>
@@ -85,5 +85,20 @@
     <!-- /.row -->
 
 </div>
+<!--<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>-->
+<!--<script type=text/javascript>-->
+<!--        $(function() {-->
+<!--            var button=document.getElementById('clbut');-->
+<!--          $(button).on('click', function(e) {-->
+<!--            e.preventDefault()-->
+<!--            $.getJSON('/mail',-->
+<!--                function(data) {-->
+<!--              //do nothing-->
+<!--            });-->
+<!--            return false;-->
+<!--          });-->
+<!--        });-->
+<!--</script>-->
+
 <!-- /.container -->
 {% endblock %}

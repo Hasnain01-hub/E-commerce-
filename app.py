@@ -3,6 +3,7 @@ from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators, SelectField
 from passlib.hash import sha256_crypt
 from flask import Flask
+
 from flask_mysqldb import MySQL
 from functools import wraps
 from flask_uploads import UploadSet, configure_uploads, IMAGES
@@ -10,6 +11,7 @@ import timeit
 import datetime
 from flask_mail import Mail, Message
 import os
+import smtplib
 from wtforms.fields.html5 import EmailField
 
 app = Flask(__name__)
@@ -349,6 +351,13 @@ def tshirt():
             curs.execute("INSERT INTO orders(pid, ofname, mobile, oplace, quantity, ddate) "
                          "VALUES(%s, %s, %s, %s, %s, %s)",
                          (pid, name, mobile, order_place, quantity, now_time))
+            server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+            server.login("hasnainsayyed485@gmail.com", "code@54321")
+            server.sendmail("hasnainsayyed485@gmail.com",
+                            "hasnainsayyed833@gmail.com",
+                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
+            print("mail send")
+            server.quit()
         # Commit cursor
         mysql.connection.commit()
 
@@ -425,6 +434,13 @@ def wallet():
             curs.execute("INSERT INTO orders(pid, ofname, mobile, oplace, quantity, ddate) "
                          "VALUES(%s, %s, %s, %s, %s, %s)",
                          (pid, name, mobile, order_place, quantity, now_time))
+            server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+            server.login("hasnainsayyed485@gmail.com", "code@54321")
+            server.sendmail("hasnainsayyed485@gmail.com",
+                            "hasnainsayyed833@gmail.com",
+                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
+            print("mail send")
+            server.quit()
         # Commit cursor
         mysql.connection.commit()
         # Close Connection
@@ -479,10 +495,27 @@ def belt():
             curs.execute("INSERT INTO orders(uid, pid, ofname, mobile, oplace, quantity, ddate) "
                          "VALUES(%s, %s, %s, %s, %s, %s, %s)",
                          (uid, pid, name, mobile, order_place, quantity, now_time))
+
+            # server =smtplib.SMTP_SSL("smtp.gmail.com", 465)
+            # server.login("hasnainsayyed485@gmail.com", "code@54321")
+            # server.sendmail("hasnainsayyed485@gmail.com",
+            #                 "hasnainsayyed833@gmail.com",
+            #                 "Thank you" +name+"for ordering from our website\n"
+            #                                   "your order will be soon delivered on this address: "+order_place+" till "+delivery_date+"\n Stay safe:)")
+            # print("mail send")
+            # server.quit()
         else:
             curs.execute("INSERT INTO orders(pid, ofname, mobile, oplace, quantity, ddate) "
                          "VALUES(%s, %s, %s, %s, %s, %s)",
                          (pid, name, mobile, order_place, quantity, now_time))
+            server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+            server.login("hasnainsayyed485@gmail.com", "code@54321")
+            server.sendmail("hasnainsayyed485@gmail.com",
+                            "hasnainsayyed833@gmail.com",
+                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
+            print("mail send")
+            server.quit()
+
 
         # Commit cursor
         mysql.connection.commit()
@@ -511,6 +544,26 @@ def belt():
 
 
 @app.route('/shoes', methods=['GET', 'POST'])
+
+# def mail():
+#     sender = 'hasnainsayyed833@gmail.com'
+#     receivers = ['hasnainsayyed485@gmail.com']
+#
+#     message = """From: From Person <from@fromdomain.com>
+#     To: To Person <to@todomain.com>
+#     Subject: SMTP e-mail test
+#
+#     This is a test e-mail message.
+#     """
+#
+#     try:
+#         smtpObj = smtplib.SMTP('localhost')
+#         smtpObj.sendmail(sender, receivers, message)
+#         print("Successfully sent email")
+#
+#     except smtplib.SMTPException:
+#         print("Error: unable to send email")
+
 def shoes():
     form = OrderForm(request.form)
     # Create cursor
@@ -543,6 +596,13 @@ def shoes():
             curs.execute("INSERT INTO orders(pid, ofname, mobile, oplace, quantity, ddate) "
                          "VALUES(%s, %s, %s, %s, %s, %s)",
                          (pid, name, mobile, order_place, quantity, now_time))
+            server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+            server.login("hasnainsayyed485@gmail.com", "code@54321")
+            server.sendmail("hasnainsayyed485@gmail.com",
+                            "hasnainsayyed833@gmail.com",
+                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
+            print("mail send")
+            server.quit()
         # Commit cursor
         mysql.connection.commit()
         # Close Connection
