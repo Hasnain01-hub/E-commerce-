@@ -13,27 +13,27 @@
         {% endif %}
     </div>
     <!-- /.navbar-header -->
-    {% if 'admin_logged_in' in session%}
-    <ul class="nav navbar-top-links navbar-right">
+<!--    {% if 'admin_logged_in' in session%}-->
+<!--    <ul class="nav navbar-top-links navbar-right">-->
+<!--        &lt;!&ndash; /.dropdown &ndash;&gt;-->
+<!--        <li class="dropdown">-->
+<!--            <a class="dropdown-toggle" data-toggle="dropdown" href="#">-->
+<!--                <i class="fa fa-user fa-fw"></i> <i class="fa fa-caret-down"></i>-->
+<!--            </a>-->
+<!--            <ul class="dropdown-menu dropdown-user">-->
+<!--                <li><a href="#"><i class="fa fa-user fa-fw"></i> User Profile</a>-->
+<!--                </li>-->
+<!--                <li><a href="#"><i class="fa fa-gear fa-fw"></i> Settings</a>-->
+<!--                </li>-->
+<!--                <li class="divider"></li>-->
+<!--                <li><a href="/admin_out"><i class="fa fa-sign-out fa-fw"></i> Logout</a>-->
+<!--                </li>-->
+<!--            </ul>-->
+<!--            &lt;!&ndash; /.dropdown-user &ndash;&gt;-->
+<!--        </li>-->
         <!-- /.dropdown -->
-        <li class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                <i class="fa fa-user fa-fw"></i> <i class="fa fa-caret-down"></i>
-            </a>
-            <ul class="dropdown-menu dropdown-user">
-                <li><a href="#"><i class="fa fa-user fa-fw"></i> User Profile</a>
-                </li>
-                <li><a href="#"><i class="fa fa-gear fa-fw"></i> Settings</a>
-                </li>
-                <li class="divider"></li>
-                <li><a href="/admin_out"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
-                </li>
-            </ul>
-            <!-- /.dropdown-user -->
-        </li>
-        <!-- /.dropdown -->
-    </ul>
-    {% endif %}
+<!--    </ul>-->
+<!--    {% endif %}-->
     <!-- /.navbar-top-links -->
 
     <div class="navbar-default sidebar" role="navigation">
@@ -50,12 +50,27 @@
                     </div>
                     <!-- /input-group -->
                 </li>
+
                 <li>
-                    <a href="/admin"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
+                    <a href="/admin"><i class="fa fa-dashboard fa-fw"></i> Dasboard</a>
                 </li>
                 <li>
                     <a href="/admin_add_product"><i class="fa fa-edit fa-fw"></i> Add Product</a>
                 </li>
+                {% if session.admin_logged_in %}
+<!--    <li class="nav-item text-capitalize">-->
+<!--                <a href="#" class="nav-link">-->
+<!--                    <span class="">Name: {{session.admin_name}}</span></a>-->
+
+            </li>
+                <li>
+                    <a href="/admin_out"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
+                </li>
+                {% else %}
+                <li>
+                    <a href="/admin_login"><i class="fa fa-sign-in fa-fw"></i> login</a>
+                </li>
+                {% endif %}
             </ul>
         </div>
         <!-- /.sidebar-collapse -->

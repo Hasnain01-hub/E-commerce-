@@ -1,5 +1,5 @@
 from flask import Flask, render_template, flash, redirect, url_for, session, request, logging
-from flask_mysqldb import MySQL
+
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators, SelectField
 from passlib.hash import sha256_crypt
 from flask import Flask
@@ -7,9 +7,7 @@ from flask import Flask
 from flask_mysqldb import MySQL
 from functools import wraps
 from flask_uploads import UploadSet, configure_uploads, IMAGES
-import timeit
-import datetime
-from flask_mail import Mail, Message
+
 import os
 import smtplib
 from wtforms.fields.html5 import EmailField
@@ -25,7 +23,7 @@ mysql = MySQL()
 app.config['MYSQL_HOST'] = '127.0.0.1'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = 'python_proj'
+app.config['MYSQL_DB'] = 'mini_proj'
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 # Initialize the app for use with this MySQL class
@@ -52,8 +50,6 @@ def not_logged_in(f):
             return f(*args, *kwargs)
 
     return wrap
-
-
 def is_admin_logged_in(f):
     @wraps(f)
     def wrap(*args, **kwargs):
@@ -118,28 +114,10 @@ def content_based_filtering(product_id):
     else:
         return ''
 
-
 @app.route('/')
 def index():
-    form = OrderForm(request.form)
-    # Create cursor
-    cur = mysql.connection.cursor()
-    # Get message
-    values = 'tshirt'
-    cur.execute("SELECT * FROM products WHERE category=%s ORDER BY RAND() LIMIT 4", (values,))
-    tshirt = cur.fetchall()
-    values = 'wallet'
-    cur.execute("SELECT * FROM products WHERE category=%s ORDER BY RAND() LIMIT 4", (values,))
-    wallet = cur.fetchall()
-    values = 'belt'
-    cur.execute("SELECT * FROM products WHERE category=%s ORDER BY RAND() LIMIT 4", (values,))
-    belt = cur.fetchall()
-    values = 'shoes'
-    cur.execute("SELECT * FROM products WHERE category=%s ORDER BY RAND() LIMIT 4", (values,))
-    shoes = cur.fetchall()
-    # Close Connection
-    cur.close()
-    return render_template('home.html', tshirt=tshirt, wallet=wallet, belt=belt, shoes=shoes, form=form)
+
+    return render_template('home.html')
 
 
 class LoginForm(Form):  # Create Login Form
@@ -248,386 +226,6 @@ def register():
         return redirect(url_for('index'))
     return render_template('register.html', form=form)
 
-
-class MessageForm(Form):  # Create Message Form
-    body = StringField('', [validators.length(min=1)], render_kw={'autofocus': True})
-
-
-@app.route('/chatting/<string:id>', methods=['GET', 'POST'])
-def chatting(id):
-    if 'uid' in session:
-        form = MessageForm(request.form)
-        # Create cursor
-        cur = mysql.connection.cursor()
-
-        # lid name
-        get_result = cur.execute("SELECT * FROM users WHERE id=%s", [id])
-        l_data = cur.fetchone()
-        if get_result > 0:
-            session['name'] = l_data['name']
-            uid = session['uid']
-            session['lid'] = id
-
-            if request.method == 'POST' and form.validate():
-                txt_body = form.body.data
-                # Create cursor
-                cur = mysql.connection.cursor()
-                cur.execute("INSERT INTO messages(body, msg_by, msg_to) VALUES(%s, %s, %s)",
-                            (txt_body, id, uid))
-                # Commit cursor
-                mysql.connection.commit()
-
-            # Get users
-            cur.execute("SELECT * FROM users")
-            users = cur.fetchall()
-
-            # Close Connection
-            cur.close()
-            return render_template('chat_room.html', users=users, form=form)
-        else:
-            flash('No permission!', 'danger')
-            return redirect(url_for('index'))
-    else:
-        return redirect(url_for('login'))
-
-
-@app.route('/chats', methods=['GET', 'POST'])
-def chats():
-    if 'lid' in session:
-        id = session['lid']
-        uid = session['uid']
-        # Create cursor
-        cur = mysql.connection.cursor()
-        # Get message
-        cur.execute("SELECT * FROM messages WHERE (msg_by=%s AND msg_to=%s) OR (msg_by=%s AND msg_to=%s) "
-                    "ORDER BY id ASC", (id, uid, uid, id))
-        chats = cur.fetchall()
-        # Close Connection
-        cur.close()
-        return render_template('chats.html', chats=chats, )
-    return redirect(url_for('login'))
-
-
-class OrderForm(Form):  # Create Order Form
-    name = StringField('', [validators.length(min=1), validators.DataRequired()],
-                       render_kw={'autofocus': True, 'placeholder': 'Full Name'})
-    mobile_num = StringField('', [validators.length(min=1), validators.DataRequired()],
-                             render_kw={'autofocus': True, 'placeholder': 'Mobile'})
-    quantity = SelectField('', [validators.DataRequired()],
-                           choices=[('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5')])
-    order_place = StringField('', [validators.length(min=1), validators.DataRequired()],
-                              render_kw={'placeholder': 'Order Place'})
-
-
-@app.route('/tshirt', methods=['GET', 'POST'])
-def tshirt():
-    form = OrderForm(request.form)
-    # Create cursor
-    cur = mysql.connection.cursor()
-    # Get message
-    values = 'tshirt'
-    cur.execute("SELECT * FROM products WHERE category=%s ORDER BY id ASC", (values,))
-    products = cur.fetchall()
-    # Close Connection
-    cur.close()
-    if request.method == 'POST' and form.validate():
-        name = form.name.data
-        mobile = form.mobile_num.data
-        order_place = form.order_place.data
-        quantity = form.quantity.data
-        pid = request.args['order']
-        now = datetime.datetime.now()
-        week = datetime.timedelta(days=7)
-        delivery_date = now + week
-        now_time = delivery_date.strftime("%y-%m-%d %H:%M:%S")
-        # Create Cursor
-        curs = mysql.connection.cursor()
-        if 'uid' in session:
-            uid = session['uid']
-            curs.execute("INSERT INTO orders(uid, pid, ofname, mobile, oplace, quantity, ddate) "
-                         "VALUES(%s, %s, %s, %s, %s, %s, %s)",
-                         (uid, pid, name, mobile, order_place, quantity, now_time))
-        else:
-            curs.execute("INSERT INTO orders(pid, ofname, mobile, oplace, quantity, ddate) "
-                         "VALUES(%s, %s, %s, %s, %s, %s)",
-                         (pid, name, mobile, order_place, quantity, now_time))
-            server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-            server.login("hasnainsayyed485@gmail.com", "code@54321")
-            server.sendmail("hasnainsayyed485@gmail.com",
-                            "hasnainsayyed833@gmail.com",
-                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
-            print("mail send")
-            server.quit()
-        # Commit cursor
-        mysql.connection.commit()
-
-        # Close Connection
-        cur.close()
-
-        flash('Order successful', 'success')
-        return render_template('tshirt.html', tshirt=products, form=form)
-    if 'view' in request.args:
-        product_id = request.args['view']
-        curso = mysql.connection.cursor()
-        curso.execute("SELECT * FROM products WHERE id=%s", (product_id,))
-        product = curso.fetchall()
-        x = content_based_filtering(product_id)
-        wrappered = wrappers(content_based_filtering, product_id)
-        execution_time = timeit.timeit(wrappered, number=0)
-        # print('Execution time: ' + str(execution_time) + ' usec')
-        if 'uid' in session:
-            uid = session['uid']
-            # Create cursor
-            cur = mysql.connection.cursor()
-            cur.execute("SELECT * FROM product_view WHERE user_id=%s AND product_id=%s", (uid, product_id))
-            result = cur.fetchall()
-            if result:
-                now = datetime.datetime.now()
-                now_time = now.strftime("%y-%m-%d %H:%M:%S")
-                cur.execute("UPDATE product_view SET date=%s WHERE user_id=%s AND product_id=%s",
-                            (now_time, uid, product_id))
-            else:
-                cur.execute("INSERT INTO product_view(user_id, product_id) VALUES(%s, %s)", (uid, product_id))
-                mysql.connection.commit()
-        return render_template('view_product.html', x=x, tshirts=product)
-    elif 'order' in request.args:
-        product_id = request.args['order']
-        curso = mysql.connection.cursor()
-        curso.execute("SELECT * FROM products WHERE id=%s", (product_id,))
-        product = curso.fetchall()
-        x = content_based_filtering(product_id)
-        return render_template('order_product.html', x=x, tshirts=product, form=form)
-    return render_template('tshirt.html', tshirt=products, form=form)
-
-
-@app.route('/wallet', methods=['GET', 'POST'])
-def wallet():
-    form = OrderForm(request.form)
-    # Create cursor
-    cur = mysql.connection.cursor()
-    # Get message
-    values = 'wallet'
-    cur.execute("SELECT * FROM products WHERE category=%s ORDER BY id ASC", (values,))
-    products = cur.fetchall()
-    # Close Connection
-    cur.close()
-
-    if request.method == 'POST' and form.validate():
-        name = form.name.data
-        mobile = form.mobile_num.data
-        order_place = form.order_place.data
-        quantity = form.quantity.data
-        pid = request.args['order']
-
-        now = datetime.datetime.now()
-        week = datetime.timedelta(days=7)
-        delivery_date = now + week
-        now_time = delivery_date.strftime("%y-%m-%d %H:%M:%S")
-        # Create Cursor
-        curs = mysql.connection.cursor()
-        if 'uid' in session:
-            uid = session['uid']
-            curs.execute("INSERT INTO orders(uid, pid, ofname, mobile, oplace, quantity, ddate) "
-                         "VALUES(%s, %s, %s, %s, %s, %s, %s)",
-                         (uid, pid, name, mobile, order_place, quantity, now_time))
-        else:
-            curs.execute("INSERT INTO orders(pid, ofname, mobile, oplace, quantity, ddate) "
-                         "VALUES(%s, %s, %s, %s, %s, %s)",
-                         (pid, name, mobile, order_place, quantity, now_time))
-            server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-            server.login("hasnainsayyed485@gmail.com", "code@54321")
-            server.sendmail("hasnainsayyed485@gmail.com",
-                            "hasnainsayyed833@gmail.com",
-                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
-            print("mail send")
-            server.quit()
-        # Commit cursor
-        mysql.connection.commit()
-        # Close Connection
-        cur.close()
-
-        flash('Order successful', 'success')
-        return render_template('wallet.html', wallet=products, form=form)
-    if 'view' in request.args:
-        q = request.args['view']
-        product_id = q
-        x = content_based_filtering(product_id)
-        curso = mysql.connection.cursor()
-        curso.execute("SELECT * FROM products WHERE id=%s", (q,))
-        products = curso.fetchall()
-        return render_template('view_product.html', x=x, tshirts=products)
-    elif 'order' in request.args:
-        product_id = request.args['order']
-        curso = mysql.connection.cursor()
-        curso.execute("SELECT * FROM products WHERE id=%s", (product_id,))
-        product = curso.fetchall()
-        x = content_based_filtering(product_id)
-        return render_template('order_product.html', x=x, tshirts=product, form=form)
-    return render_template('wallet.html', wallet=products, form=form)
-
-
-@app.route('/belt', methods=['GET', 'POST'])
-def belt():
-    form = OrderForm(request.form)
-    # Create cursor
-    cur = mysql.connection.cursor()
-    # Get message
-    values = 'belt'
-    cur.execute("SELECT * FROM products WHERE category=%s ORDER BY id ASC", (values,))
-    products = cur.fetchall()
-    # Close Connection
-    cur.close()
-
-    if request.method == 'POST' and form.validate():
-        name = form.name.data
-        mobile = form.mobile_num.data
-        order_place = form.order_place.data
-        quantity = form.quantity.data
-        pid = request.args['order']
-        now = datetime.datetime.now()
-        week = datetime.timedelta(days=7)
-        delivery_date = now + week
-        now_time = delivery_date.strftime("%y-%m-%d %H:%M:%S")
-        # Create Cursor
-        curs = mysql.connection.cursor()
-        if 'uid' in session:
-            uid = session['uid']
-            curs.execute("INSERT INTO orders(uid, pid, ofname, mobile, oplace, quantity, ddate) "
-                         "VALUES(%s, %s, %s, %s, %s, %s, %s)",
-                         (uid, pid, name, mobile, order_place, quantity, now_time))
-
-            # server =smtplib.SMTP_SSL("smtp.gmail.com", 465)
-            # server.login("hasnainsayyed485@gmail.com", "code@54321")
-            # server.sendmail("hasnainsayyed485@gmail.com",
-            #                 "hasnainsayyed833@gmail.com",
-            #                 "Thank you" +name+"for ordering from our website\n"
-            #                                   "your order will be soon delivered on this address: "+order_place+" till "+delivery_date+"\n Stay safe:)")
-            # print("mail send")
-            # server.quit()
-        else:
-            curs.execute("INSERT INTO orders(pid, ofname, mobile, oplace, quantity, ddate) "
-                         "VALUES(%s, %s, %s, %s, %s, %s)",
-                         (pid, name, mobile, order_place, quantity, now_time))
-            server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-            server.login("hasnainsayyed485@gmail.com", "code@54321")
-            server.sendmail("hasnainsayyed485@gmail.com",
-                            "hasnainsayyed833@gmail.com",
-                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
-            print("mail send")
-            server.quit()
-
-
-        # Commit cursor
-        mysql.connection.commit()
-
-        # Close Connection
-        cur.close()
-
-        flash('Order successful', 'success')
-        return render_template('belt.html', belt=products, form=form)
-    if 'view' in request.args:
-        q = request.args['view']
-        product_id = q
-        x = content_based_filtering(product_id)
-        curso = mysql.connection.cursor()
-        curso.execute("SELECT * FROM products WHERE id=%s", (q,))
-        products = curso.fetchall()
-        return render_template('view_product.html', x=x, tshirts=products)
-    elif 'order' in request.args:
-        product_id = request.args['order']
-        curso = mysql.connection.cursor()
-        curso.execute("SELECT * FROM products WHERE id=%s", (product_id,))
-        product = curso.fetchall()
-        x = content_based_filtering(product_id)
-        return render_template('order_product.html', x=x, tshirts=product, form=form)
-    return render_template('belt.html', belt=products, form=form)
-
-
-@app.route('/shoes', methods=['GET', 'POST'])
-
-# def mail():
-#     sender = 'hasnainsayyed833@gmail.com'
-#     receivers = ['hasnainsayyed485@gmail.com']
-#
-#     message = """From: From Person <from@fromdomain.com>
-#     To: To Person <to@todomain.com>
-#     Subject: SMTP e-mail test
-#
-#     This is a test e-mail message.
-#     """
-#
-#     try:
-#         smtpObj = smtplib.SMTP('localhost')
-#         smtpObj.sendmail(sender, receivers, message)
-#         print("Successfully sent email")
-#
-#     except smtplib.SMTPException:
-#         print("Error: unable to send email")
-
-def shoes():
-    form = OrderForm(request.form)
-    # Create cursor
-    cur = mysql.connection.cursor()
-    # Get message
-    values = 'shoes'
-    cur.execute("SELECT * FROM products WHERE category=%s ORDER BY id ASC", (values,))
-    products = cur.fetchall()
-    # Close Connection
-    cur.close()
-
-    if request.method == 'POST' and form.validate():
-        name = form.name.data
-        mobile = form.mobile_num.data
-        order_place = form.order_place.data
-        quantity = form.quantity.data
-        pid = request.args['order']
-        now = datetime.datetime.now()
-        week = datetime.timedelta(days=7)
-        delivery_date = now + week
-        now_time = delivery_date.strftime("%y-%m-%d %H:%M:%S")
-        # Create Cursor
-        curs = mysql.connection.cursor()
-        if 'uid' in session:
-            uid = session['uid']
-            curs.execute("INSERT INTO orders(uid, pid, ofname, mobile, oplace, quantity, ddate) "
-                         "VALUES(%s, %s, %s, %s, %s, %s, %s)",
-                         (uid, pid, name, mobile, order_place, quantity, now_time))
-        else:
-            curs.execute("INSERT INTO orders(pid, ofname, mobile, oplace, quantity, ddate) "
-                         "VALUES(%s, %s, %s, %s, %s, %s)",
-                         (pid, name, mobile, order_place, quantity, now_time))
-            server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-            server.login("hasnainsayyed485@gmail.com", "code@54321")
-            server.sendmail("hasnainsayyed485@gmail.com",
-                            "hasnainsayyed833@gmail.com",
-                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
-            print("mail send")
-            server.quit()
-        # Commit cursor
-        mysql.connection.commit()
-        # Close Connection
-        cur.close()
-
-        flash('Order successful', 'success')
-        return render_template('shoes.html', shoes=products, form=form)
-    if 'view' in request.args:
-        q = request.args['view']
-        product_id = q
-        x = content_based_filtering(product_id)
-        curso = mysql.connection.cursor()
-        curso.execute("SELECT * FROM products WHERE id=%s", (q,))
-        products = curso.fetchall()
-        return render_template('view_product.html', x=x, tshirts=products)
-    elif 'order' in request.args:
-        product_id = request.args['order']
-        curso = mysql.connection.cursor()
-        curso.execute("SELECT * FROM products WHERE id=%s", (product_id,))
-        product = curso.fetchall()
-        x = content_based_filtering(product_id)
-        return render_template('order_product.html', x=x, tshirts=product, form=form)
-    return render_template('shoes.html', shoes=products, form=form)
-
-
 @app.route('/admin_login', methods=['GET', 'POST'])
 @not_admin_logged_in
 def admin_login():
@@ -689,6 +287,119 @@ def admin():
     return render_template('pages/index.html', result=result, row=num_rows, order_rows=order_rows,
                            users_rows=users_rows)
 
+
+
+
+
+
+
+class OrderForm(Form):  # Create Order Form
+    name = StringField('', [validators.length(min=1), validators.DataRequired()],
+                       render_kw={'autofocus': True, 'placeholder': 'Full Name'})
+    mobile_num = StringField('', [validators.length(min=1), validators.DataRequired()],
+                             render_kw={'autofocus': True, 'placeholder': 'Mobile'})
+    quantity = SelectField('', [validators.DataRequired()],
+                           choices=[('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5')])
+    order_place = StringField('', [validators.length(min=1), validators.DataRequired()],
+                              render_kw={'placeholder': 'Order Place'})
+
+
+
+@app.route('/search', methods=['POST', 'GET'])
+def search():
+    form = OrderForm(request.form)
+    if 'q' in request.args:
+        q = request.args['q']
+        # Create cursor
+        cur = mysql.connection.cursor()
+        # Get message
+        query_string = "SELECT * FROM products WHERE pName LIKE %s ORDER BY id ASC"
+        cur.execute(query_string, ('%' + q + '%',))
+        products = cur.fetchall()
+        # Close Connection
+        cur.close()
+        flash('Showing result for: ' + q, 'success')
+        return render_template('search.html', products=products, form=form)
+    else:
+        flash('Search again', 'danger')
+        return render_template('search.html')
+
+
+@app.route('/profile')
+@is_logged_in
+def profile():
+    if 'user' in request.args:
+        q = request.args['user']
+        curso = mysql.connection.cursor()
+        curso.execute("SELECT * FROM users WHERE id=%s", (q,))
+        result = curso.fetchone()
+        if result:
+            if result['id'] == session['uid']:
+                curso.execute("SELECT * FROM orders WHERE uid=%s ORDER BY id ASC", (session['uid'],))
+                res = curso.fetchall()
+                return render_template('profile.html', result=res)
+            else:
+                flash('Unauthorised', 'danger')
+                return redirect(url_for('login'))
+        else:
+            flash('Unauthorised! Please login', 'danger')
+            return redirect(url_for('login'))
+    else:
+        flash('Unauthorised', 'danger')
+        return redirect(url_for('login'))
+
+
+class UpdateRegisterForm(Form):
+    name = StringField('Full Name', [validators.length(min=3, max=50)],
+                       render_kw={'autofocus': True, 'placeholder': 'Full Name'})
+    email = EmailField('Email', [validators.DataRequired(), validators.Email(), validators.length(min=4, max=25)],
+                       render_kw={'placeholder': 'Email'})
+    password = PasswordField('Password', [validators.length(min=3)],
+                             render_kw={'placeholder': 'Password'})
+    mobile = StringField('Mobile', [validators.length(min=11, max=15)], render_kw={'placeholder': 'Mobile'})
+
+
+@app.route('/settings', methods=['POST', 'GET'])
+@is_logged_in
+def settings():
+    form = UpdateRegisterForm(request.form)
+    if 'user' in request.args:
+        q = request.args['user']
+        curso = mysql.connection.cursor()
+        curso.execute("SELECT * FROM users WHERE id=%s", (q,))
+        result = curso.fetchone()
+        if result:
+            if result['id'] == session['uid']:
+                if request.method == 'POST' and form.validate():
+                    name = form.name.data
+                    email = form.email.data
+                    password = sha256_crypt.encrypt(str(form.password.data))
+                    mobile = form.mobile.data
+
+                    # Create Cursor
+                    cur = mysql.connection.cursor()
+                    exe = cur.execute("UPDATE users SET name=%s, email=%s, password=%s, mobile=%s WHERE id=%s",
+                                      (name, email, password, mobile, q))
+                    if exe:
+                        flash('Profile updated', 'success')
+                        return render_template('user_settings.html', result=result, form=form)
+                    else:
+                        flash('Profile not updated', 'danger')
+                return render_template('user_settings.html', result=result, form=form)
+            else:
+                flash('Unauthorised', 'danger')
+                return redirect(url_for('login'))
+        else:
+            flash('Unauthorised! Please login', 'danger')
+            return redirect(url_for('login'))
+    else:
+        flash('Unauthorised', 'danger')
+        return redirect(url_for('login'))
+
+
+class DeveloperForm(Form):  #
+    id = StringField('', [validators.length(min=1)],
+                     render_kw={'placeholder': 'Input a product id...'})
 
 @app.route('/orders')
 @is_admin_logged_in
@@ -813,21 +524,21 @@ def edit_product():
                 category = request.form['category']
                 item = request.form['item']
                 code = request.form['code']
-                file = request.files['picture']
+                # file = request.files['picture']
                 # Create Cursor
-                if name and price and description and available and category and item and code and file:
-                    pic = file.filename
-                    photo = pic.replace("'", "")
-                    picture = photo.replace(" ", "")
-                    if picture.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        file.filename = picture
-                        save_photo = photos.save(file, folder=category)
-                        if save_photo:
+                if name and price and description and available and category and item and code :
+                    # pic = file.filename
+                    # photo = pic.replace("'", "")
+                    # picture = photo.replace(" ", "")
+                    if True:
+                        # file.filename = picture
+                        # save_photo = photos.save(file, folder=category)
+                        if True:
                             # Create Cursor
                             cur = mysql.connection.cursor()
                             exe = curso.execute(
-                                "UPDATE products SET pName=%s, price=%s, description=%s, available=%s, category=%s, item=%s, pCode=%s, picture=%s WHERE id=%s",
-                                (name, price, description, available, category, item, code, picture, product_id))
+                                "UPDATE products SET pName=%s, price=%s, description=%s, available=%s, category=%s, item=%s, pCode=%s  WHERE id=%s",
+                                (name, price, description, available, category, item, code, product_id))
                             if exe:
                                 if category == 'tshirt':
                                     level = request.form.getlist('tshirt')
@@ -891,123 +602,6 @@ def edit_product():
             return redirect(url_for('admin_login'))
     else:
         return redirect(url_for('admin_login'))
-
-
-@app.route('/search', methods=['POST', 'GET'])
-def search():
-    form = OrderForm(request.form)
-    if 'q' in request.args:
-        q = request.args['q']
-        # Create cursor
-        cur = mysql.connection.cursor()
-        # Get message
-        query_string = "SELECT * FROM products WHERE pName LIKE %s ORDER BY id ASC"
-        cur.execute(query_string, ('%' + q + '%',))
-        products = cur.fetchall()
-        # Close Connection
-        cur.close()
-        flash('Showing result for: ' + q, 'success')
-        return render_template('search.html', products=products, form=form)
-    else:
-        flash('Search again', 'danger')
-        return render_template('search.html')
-
-
-@app.route('/profile')
-@is_logged_in
-def profile():
-    if 'user' in request.args:
-        q = request.args['user']
-        curso = mysql.connection.cursor()
-        curso.execute("SELECT * FROM users WHERE id=%s", (q,))
-        result = curso.fetchone()
-        if result:
-            if result['id'] == session['uid']:
-                curso.execute("SELECT * FROM orders WHERE uid=%s ORDER BY id ASC", (session['uid'],))
-                res = curso.fetchall()
-                return render_template('profile.html', result=res)
-            else:
-                flash('Unauthorised', 'danger')
-                return redirect(url_for('login'))
-        else:
-            flash('Unauthorised! Please login', 'danger')
-            return redirect(url_for('login'))
-    else:
-        flash('Unauthorised', 'danger')
-        return redirect(url_for('login'))
-
-
-class UpdateRegisterForm(Form):
-    name = StringField('Full Name', [validators.length(min=3, max=50)],
-                       render_kw={'autofocus': True, 'placeholder': 'Full Name'})
-    email = EmailField('Email', [validators.DataRequired(), validators.Email(), validators.length(min=4, max=25)],
-                       render_kw={'placeholder': 'Email'})
-    password = PasswordField('Password', [validators.length(min=3)],
-                             render_kw={'placeholder': 'Password'})
-    mobile = StringField('Mobile', [validators.length(min=11, max=15)], render_kw={'placeholder': 'Mobile'})
-
-
-@app.route('/settings', methods=['POST', 'GET'])
-@is_logged_in
-def settings():
-    form = UpdateRegisterForm(request.form)
-    if 'user' in request.args:
-        q = request.args['user']
-        curso = mysql.connection.cursor()
-        curso.execute("SELECT * FROM users WHERE id=%s", (q,))
-        result = curso.fetchone()
-        if result:
-            if result['id'] == session['uid']:
-                if request.method == 'POST' and form.validate():
-                    name = form.name.data
-                    email = form.email.data
-                    password = sha256_crypt.encrypt(str(form.password.data))
-                    mobile = form.mobile.data
-
-                    # Create Cursor
-                    cur = mysql.connection.cursor()
-                    exe = cur.execute("UPDATE users SET name=%s, email=%s, password=%s, mobile=%s WHERE id=%s",
-                                      (name, email, password, mobile, q))
-                    if exe:
-                        flash('Profile updated', 'success')
-                        return render_template('user_settings.html', result=result, form=form)
-                    else:
-                        flash('Profile not updated', 'danger')
-                return render_template('user_settings.html', result=result, form=form)
-            else:
-                flash('Unauthorised', 'danger')
-                return redirect(url_for('login'))
-        else:
-            flash('Unauthorised! Please login', 'danger')
-            return redirect(url_for('login'))
-    else:
-        flash('Unauthorised', 'danger')
-        return redirect(url_for('login'))
-
-
-class DeveloperForm(Form):  #
-    id = StringField('', [validators.length(min=1)],
-                     render_kw={'placeholder': 'Input a product id...'})
-
-
-@app.route('/developer', methods=['POST', 'GET'])
-def developer():
-    form = DeveloperForm(request.form)
-    if request.method == 'POST' and form.validate():
-        q = form.id.data
-        curso = mysql.connection.cursor()
-        result = curso.execute("SELECT * FROM products WHERE id=%s", (q,))
-        if result > 0:
-            x = content_based_filtering(q)
-            wrappered = wrappers(content_based_filtering, q)
-            execution_time = timeit.timeit(wrappered, number=0)
-            seconds = ((execution_time / 1000) % 60)
-            return render_template('developer.html', form=form, x=x, execution_time=seconds)
-        else:
-            nothing = 'Nothing found'
-            return render_template('developer.html', form=form, nothing=nothing)
-    else:
-        return render_template('developer.html', form=form)
 
 
 if __name__ == '__main__':
