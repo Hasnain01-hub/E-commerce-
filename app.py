@@ -1,4 +1,5 @@
 from flask import Flask, render_template, flash, redirect, url_for, session, request, logging
+import datetime
 import timeit
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators, SelectField
 from passlib.hash import sha256_crypt
@@ -335,13 +336,13 @@ def tshirt():
                          "VALUES(%s, %s, %s, %s, %s, %s, %s)",
                          (uid, pid, name, mobile, order_place, quantity, now_time))
             flash('Order successful', 'success')
-            # server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-            # server.login("hasnainsayyed485@gmail.com", "code@54321")
-            # server.sendmail("hasnainsayyed485@gmail.com",
-            #                 "hasnainsayyed833@gmail.com",
-            #                 "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
-            # print("mail send")
-            # server.quit()
+            server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+            server.login("hasnainsayyed485@gmail.com", "code@54321")
+            server.sendmail("hasnainsayyed485@gmail.com",
+                            "hasnainsayyed833@gmail.com",
+                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
+            print("mail send")
+            server.quit()
         else:
             flash('Login first', 'danger')
             # curs.execute("INSERT INTO orders(pid, ofname, mobile, oplace, quantity, ddate) "
@@ -355,10 +356,10 @@ def tshirt():
             # print("mail send")
             # server.quit()
         # Commit cursor
-        # mysql.connection.commit()
+        mysql.connection.commit()
 
         # # Close Connection
-        # cur.close()
+        cur.close()
 
         return render_template('tshirt.html', tshirt=products, form=form)
     if 'view' in request.args:
@@ -426,13 +427,13 @@ def wallet():
                          "VALUES(%s, %s, %s, %s, %s, %s, %s)",
                          (uid, pid, name, mobile, order_place, quantity, now_time))
             flash('Order successful', 'success')
-            # server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-            # server.login("hasnainsayyed485@gmail.com", "code@54321")
-            # server.sendmail("hasnainsayyed485@gmail.com",
-            #                 "hasnainsayyed833@gmail.com",
-            #                 "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
-            # print("mail send")
-            # server.quit()
+            server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+            server.login("hasnainsayyed485@gmail.com", "code@54321")
+            server.sendmail("hasnainsayyed485@gmail.com",
+                            "hasnainsayyed833@gmail.com",
+                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
+            print("mail send")
+            server.quit()
         else:
             flash('Login first', 'danger')
             # curs.execute("INSERT INTO orders(pid, ofname, mobile, oplace, quantity, ddate) "
@@ -446,9 +447,9 @@ def wallet():
             # print("mail send")
             # server.quit()
         # Commit cursor
-        # mysql.connection.commit()
-        # # Close Connection
-        # cur.close()
+        mysql.connection.commit()
+        # Close Connection
+        cur.close()
 
         return render_template('wallet.html', wallet=products, form=form)
     if 'view' in request.args:
@@ -499,14 +500,14 @@ def belt():
                          "VALUES(%s, %s, %s, %s, %s, %s, %s)",
                          (uid, pid, name, mobile, order_place, quantity, now_time))
 
-            # server =smtplib.SMTP_SSL("smtp.gmail.com", 465)
-            # server.login("hasnainsayyed485@gmail.com", "code@54321")
-            # server.sendmail("hasnainsayyed485@gmail.com",
-            #                 "hasnainsayyed833@gmail.com",
-            #                 "Thank you" +name+"for ordering from our website\n"
-            #                                   "your order will be soon delivered on this address: "+order_place+" till "+delivery_date+"\n Stay safe:)")
-            # print("mail send")
-            # server.quit()
+            server =smtplib.SMTP_SSL("smtp.gmail.com", 465)
+            server.login("hasnainsayyed485@gmail.com", "code@54321")
+            server.sendmail("hasnainsayyed485@gmail.com",
+                            "hasnainsayyed833@gmail.com",
+                            "Thank you" +name+"for ordering from our website\n"
+                                              "your order will be soon delivered on this address: "+order_place+"\n Stay safe:)")
+            print("mail send")
+            server.quit()
             flash('Order successful', 'success')
         else:
             flash('Login first', 'danger')
@@ -523,10 +524,10 @@ def belt():
 
 
         # Commit cursor
-        # mysql.connection.commit()
+        mysql.connection.commit()
 
-        # # Close Connection
-        # cur.close()
+        # Close Connection
+        cur.close()
 
         return render_template('belt.html', belt=products, form=form)
     if 'view' in request.args:
@@ -576,13 +577,13 @@ def shoes():
             curs.execute("INSERT INTO orders(uid, pid, ofname, mobile, oplace, quantity, ddate) "
                          "VALUES(%s, %s, %s, %s, %s, %s, %s)",
                          (uid, pid, name, mobile, order_place, quantity, now_time))
-            # server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-            # server.login("hasnainsayyed485@gmail.com", "code@54321")
-            # server.sendmail("hasnainsayyed485@gmail.com",
-            #                 "hasnainsayyed833@gmail.com",
-            #                 "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
-            # print("mail send")
-            # server.quit()             
+            server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+            server.login("hasnainsayyed485@gmail.com", "code@54321")
+            server.sendmail("hasnainsayyed485@gmail.com",
+                            "hasnainsayyed833@gmail.com",
+                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
+            print("mail send")
+            server.quit()             
             flash('Order successful', 'success')
         else:
             flash('Login first', 'danger')
@@ -591,9 +592,9 @@ def shoes():
             #              (pid, name, mobile, order_place, quantity, now_time))
             
         # Commit cursor
-        # mysql.connection.commit()
-        # # Close Connection
-        # cur.close()
+        mysql.connection.commit()
+        # Close Connection
+        cur.close()
 
         return render_template('shoes.html', shoes=products, form=form)
     if 'view' in request.args:
