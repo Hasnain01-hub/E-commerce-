@@ -1,3 +1,4 @@
+from ctypes import addressof
 from flask import Flask, render_template, flash, redirect, url_for, session, request, logging
 import datetime
 import timeit
@@ -177,6 +178,8 @@ def login():
                 session['logged_in'] = True
                 session['uid'] = uid
                 session['s_name'] = name
+                session['phone']=data['mobile']
+                session['address']=data['address']
                 x = '1'
                 cur.execute("UPDATE users SET online=%s WHERE id=%s", (x, uid))
 
@@ -216,6 +219,7 @@ class RegisterForm(Form):
                        render_kw={'placeholder': 'Email'})
     password = PasswordField('', [validators.length(min=3)],
                              render_kw={'placeholder': 'Password'})
+    address=StringField('', [validators.length(min=3,)] , render_kw={'placeholder': 'Address'})
     mobile = StringField('', [validators.length(min=11, max=15)], render_kw={'placeholder': 'Mobile'})
 
 
@@ -227,13 +231,14 @@ def register():
         name = form.name.data
         email = form.email.data
         username = form.username.data
+        address=form.address.data
         password = sha256_crypt.encrypt(str(form.password.data))
         mobile = form.mobile.data
 
         # Create Cursor
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users(name, email, username, password, mobile) VALUES(%s, %s, %s, %s, %s)",
-                    (name, email, username, password, mobile))
+        cur.execute("INSERT INTO users(name, email, username, password, mobile,address) VALUES(%s, %s, %s, %s, %s, %s)",
+                    (name, email, username, password, mobile,address))
 
         # Commit cursor
         mysql.connection.commit()
@@ -319,9 +324,9 @@ def tshirt():
     # Close Connection
     cur.close()
     if request.method == 'POST' and form.validate():
-        name = form.name.data
-        mobile = form.mobile_num.data
-        order_place = form.order_place.data
+        # name = form.name.data
+        # mobile = form.mobile_num.data
+        
         quantity = form.quantity.data
         pid = request.args['order']
         now = datetime.datetime.now()
@@ -334,13 +339,13 @@ def tshirt():
             uid = session['uid']
             curs.execute("INSERT INTO orders(uid, pid, ofname, mobile, oplace, quantity, ddate) "
                          "VALUES(%s, %s, %s, %s, %s, %s, %s)",
-                         (uid, pid, name, mobile, order_place, quantity, now_time))
+                         (uid, pid, session['s_name'], session['phone'], session['address'], quantity, now_time))
             flash('Order successful', 'success')
             server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
             server.login("hasnainsayyed485@gmail.com", "code@54321")
             server.sendmail("hasnainsayyed485@gmail.com",
                             "hasnainsayyed833@gmail.com",
-                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
+                            "Thank you " + session['s_name'] + " for ordering from our website \n your order will be soon delivered on this address: " + session['address'] + "\n Stay safe:)")
             print("mail send")
             server.quit()
         else:
@@ -409,9 +414,9 @@ def wallet():
     cur.close()
 
     if request.method == 'POST' and form.validate():
-        name = form.name.data
-        mobile = form.mobile_num.data
-        order_place = form.order_place.data
+        # name = form.name.data
+        # mobile = form.mobile_num.data
+        # order_place = session['address']
         quantity = form.quantity.data
         pid = request.args['order']
 
@@ -425,13 +430,13 @@ def wallet():
             uid = session['uid']
             curs.execute("INSERT INTO orders(uid, pid, ofname, mobile, oplace, quantity, ddate) "
                          "VALUES(%s, %s, %s, %s, %s, %s, %s)",
-                         (uid, pid, name, mobile, order_place, quantity, now_time))
+                         (uid, pid, session['s_name'], session['phone'], session['address'], quantity, now_time))
             flash('Order successful', 'success')
             server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
             server.login("hasnainsayyed485@gmail.com", "code@54321")
             server.sendmail("hasnainsayyed485@gmail.com",
                             "hasnainsayyed833@gmail.com",
-                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
+                            "Thank you " + session['s_name'] + " for ordering from our website \n your order will be soon delivered on this address: " + session['address'] + "\n Stay safe:)")
             print("mail send")
             server.quit()
         else:
@@ -483,9 +488,9 @@ def belt():
     cur.close()
 
     if request.method == 'POST' and form.validate():
-        name = form.name.data
-        mobile = form.mobile_num.data
-        order_place = form.order_place.data
+        # name = form.name.data
+        # mobile = form.mobile_num.data
+        # order_place = session['address']
         quantity = form.quantity.data
         pid = request.args['order']
         now = datetime.datetime.now()
@@ -498,14 +503,14 @@ def belt():
             uid = session['uid']
             curs.execute("INSERT INTO orders(uid, pid, ofname, mobile, oplace, quantity, ddate) "
                          "VALUES(%s, %s, %s, %s, %s, %s, %s)",
-                         (uid, pid, name, mobile, order_place, quantity, now_time))
+                         (uid, pid, session['s_name'], session['phone'], session['address'], quantity, now_time))
 
             server =smtplib.SMTP_SSL("smtp.gmail.com", 465)
             server.login("hasnainsayyed485@gmail.com", "code@54321")
             server.sendmail("hasnainsayyed485@gmail.com",
                             "hasnainsayyed833@gmail.com",
-                            "Thank you" +name+"for ordering from our website\n"
-                                              "your order will be soon delivered on this address: "+order_place+"\n Stay safe:)")
+                            "Thank you" +session['s_name']+"for ordering from our website\n"
+                                              "your order will be soon delivered on this address: "+session['address']+"\n Stay safe:)")
             print("mail send")
             server.quit()
             flash('Order successful', 'success')
@@ -561,9 +566,9 @@ def shoes():
     cur.close()
 
     if request.method == 'POST' and form.validate():
-        name = form.name.data
-        mobile = form.mobile_num.data
-        order_place = form.order_place.data
+        # name = form.name.data
+        # mobile = form.mobile_num.data
+        # order_place = session['address']
         quantity = form.quantity.data
         pid = request.args['order']
         now = datetime.datetime.now()
@@ -576,12 +581,12 @@ def shoes():
             uid = session['uid']
             curs.execute("INSERT INTO orders(uid, pid, ofname, mobile, oplace, quantity, ddate) "
                          "VALUES(%s, %s, %s, %s, %s, %s, %s)",
-                         (uid, pid, name, mobile, order_place, quantity, now_time))
+                         (uid, pid, session['s_name'], session['phone'], session['address'], quantity, now_time))
             server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
             server.login("hasnainsayyed485@gmail.com", "code@54321")
             server.sendmail("hasnainsayyed485@gmail.com",
                             "hasnainsayyed833@gmail.com",
-                            "Thank you " + name + " for ordering from our website \n your order will be soon delivered on this address: " + order_place + "\n Stay safe:)")
+                            "Thank you " + session['s_name'] + " for ordering from our website \n your order will be soon delivered on this address: " + session['address'] + "\n Stay safe:)")
             print("mail send")
             server.quit()             
             flash('Order successful', 'success')
@@ -639,28 +644,29 @@ def profile():
         return redirect(url_for('login'))
 
 
-class UpdateRegisterForm(Form):
-    name = StringField('Full Name', [validators.length(min=3, max=50)],
-                       render_kw={'autofocus': True, 'placeholder': 'Full Name'})
-    email = EmailField('Email', [validators.DataRequired(), validators.Email(), validators.length(min=4, max=25)],
-                       render_kw={'placeholder': 'Email'})
-    password = PasswordField('Password', [validators.length(min=3)],
-                             render_kw={'placeholder': 'Password'})
-    mobile = StringField('Mobile', [validators.length(min=11, max=15)], render_kw={'placeholder': 'Mobile'})
+# class UpdateRegisterForm(Form):
+#     name = StringField('Full Name', [validators.length(min=3, max=50)],
+#                        render_kw={'autofocus': True, 'placeholder': 'Full Name'})
+#     email = EmailField('Email', [validators.DataRequired(), validators.Email(), validators.length(min=4, max=25)],
+#                        render_kw={'placeholder': 'Email'})
+#     password = PasswordField('Password', [validators.length(min=3)],
+#                              render_kw={'placeholder': 'Password'})
+    
+#     mobile = StringField('Mobile', [validators.length(min=11, max=15)], render_kw={'placeholder': 'Mobile'})
 
 
 
 
 
 class OrderForm(Form):  # Create Order Form
-    name = StringField('', [validators.length(min=1), validators.DataRequired()],
-                       render_kw={'autofocus': True, 'placeholder': 'Full Name'})
-    mobile_num = StringField('', [validators.length(min=1), validators.DataRequired()],
-                             render_kw={'autofocus': True, 'placeholder': 'Mobile'})
+    # name = StringField('', [validators.length(min=1), validators.DataRequired()],
+    #                    render_kw={'autofocus': True, 'placeholder': 'Full Name'})
+    # mobile_num = StringField('', [validators.length(min=1), validators.DataRequired()],
+    #                          render_kw={'autofocus': True, 'placeholder': 'Mobile'})
     quantity = SelectField('', [validators.DataRequired()],
                            choices=[('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5')])
-    order_place = StringField('', [validators.length(min=1), validators.DataRequired()],
-                              render_kw={'placeholder': 'Order Place'})
+    # order_place = StringField('', [validators.length(min=1), validators.DataRequired()],
+    #                           render_kw={'placeholder': 'Order Place'})
 
 
 
@@ -693,6 +699,7 @@ class UpdateRegisterForm(Form):
                        render_kw={'placeholder': 'Email'})
     password = PasswordField('Password', [validators.length(min=3)],
                              render_kw={'placeholder': 'Password'})
+    address= StringField('Address', [validators.length(min=3,)],render_kw={'placeholder': 'Address'})
     mobile = StringField('Mobile', [validators.length(min=11, max=15)], render_kw={'placeholder': 'Mobile'})
 
 
@@ -710,13 +717,14 @@ def settings():
                 if request.method == 'POST':
                     name = form.name.data
                     email = form.email.data
-                    password = sha256_crypt.encrypt(str(form.password.data))
+                    # password = sha256_crypt.encrypt(str(form.password.data))
+                    address= form.address.data
                     mobile = form.mobile.data
 
                     # Create Cursor
                     cur = mysql.connection.cursor()
-                    exe = cur.execute("UPDATE users SET name=%s, email=%s, password=%s, mobile=%s WHERE id=%s",
-                                      (name, email, password, mobile, q))
+                    exe = cur.execute("UPDATE users SET name=%s, email=%s, mobile=%s, address=%s WHERE id=%s",
+                                      (name, email,  mobile,address, q))
                     cur.close()
                     if exe:
                         flash('Profile updated', 'success')
